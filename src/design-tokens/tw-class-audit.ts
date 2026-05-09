@@ -397,7 +397,7 @@ export function autoClassControls(source: string): AutoControlsResult {
     const labels = makeLabels(catMeta.tokens, entry.isToken ? null : entry.value, entry.equivalentToken);
 
     const desc = entry.isToken
-      ? `✅ ${catMeta.label} · ${entry.raw}`
+      ? `${catMeta.label} · ${entry.raw}`
       : `⚠️ ${catMeta.label} · ${entry.raw} → 建议 ${entry.equivalentToken ?? "手动选择"}`;
 
     args[controlId] = defaultKey;
