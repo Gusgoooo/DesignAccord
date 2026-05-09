@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="https://img.shields.io/npm/v/harnessui?style=flat-square&color=0969da" alt="npm version" />
-  <img src="https://img.shields.io/npm/l/harnessui?style=flat-square" alt="license" />
+  <img src="https://img.shields.io/npm/v/harness-design?style=flat-square&color=0969da" alt="npm version" />
+  <img src="https://img.shields.io/npm/l/harness-design?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/tailwindcss-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS v4" />
   <img src="https://img.shields.io/badge/storybook-8-FF4785?style=flat-square&logo=storybook&logoColor=white" alt="Storybook 8" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
@@ -80,7 +80,7 @@ tokens.json ──(sync:tokens)──► design-tokens.generated.css ──► T
 ### 安装
 
 ```bash
-npm install harnessui
+npm install harness-design
 ```
 
 ### 在项目中初始化
@@ -291,7 +291,7 @@ MCP 服务暴露：
 ## 项目结构
 
 ```
-harnessui/
+harness-design/
 ├── bin/
 │   ├── harness.mjs              # CLI 入口
 │   └── harness-mcp.mjs          # MCP 服务
@@ -329,11 +329,11 @@ HarnessUI 的设计理念类似 [shadcn/ui](https://ui.shadcn.com/) —— 组�
 
 ```bash
 # 首次安装
-npm install harnessui
+npm install harness-design
 npx harness init
 
 # 后续升级：自动添加新组件，保留你的修改
-npm update harnessui
+npm update harness-design
 npx harness upgrade
 ```
 

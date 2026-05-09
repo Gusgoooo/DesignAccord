@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="https://img.shields.io/npm/v/harnessui?style=flat-square&color=0969da" alt="npm version" />
-  <img src="https://img.shields.io/npm/l/harnessui?style=flat-square" alt="license" />
+  <img src="https://img.shields.io/npm/v/harness-design?style=flat-square&color=0969da" alt="npm version" />
+  <img src="https://img.shields.io/npm/l/harness-design?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/tailwindcss-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS v4" />
   <img src="https://img.shields.io/badge/storybook-8-FF4785?style=flat-square&logo=storybook&logoColor=white" alt="Storybook 8" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
@@ -80,7 +80,7 @@ tokens.json ──(sync:tokens)──► design-tokens.generated.css ──► T
 ### Install
 
 ```bash
-npm install harnessui
+npm install harness-design
 ```
 
 ### Initialize in Your Project
@@ -291,7 +291,7 @@ Configure in `.cursor/mcp.json`:
 ## Project Structure
 
 ```
-harnessui/
+harness-design/
 ├── bin/
 │   ├── harness.mjs              # CLI entry point
 │   └── harness-mcp.mjs          # MCP server
@@ -329,11 +329,11 @@ HarnessUI is designed like [shadcn/ui](https://ui.shadcn.com/) — components li
 
 ```bash
 # First install
-npm install harnessui
+npm install harness-design
 npx harness init
 
 # Later: upgrade adds new components, preserves your modifications
-npm update harnessui
+npm update harness-design
 npx harness upgrade
 ```
 

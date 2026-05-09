@@ -1,6 +1,6 @@
 # 一页纸：HarnessDesign × Done DSM-ForAI（示意图）
 
-> **用途**：对齐两套思路的差异与互补关系，便于评审、对外讲解或内部选型。**HarnessDesign** 指本仓库 **harnessui** 路线；**Done DSM-ForAI** 指「主题 / 基础组件 / 业务组件」三层向 **中央 AI MCP 服务** 汇聚的示意图产品思路。
+> **用途**：对齐两套思路的差异与互补关系，便于评审、对外讲解或内部选型。**HarnessDesign** 指本仓库 **harness-design** 路线；**Done DSM-ForAI** 指「主题 / 基础组件 / 业务组件」三层向 **中央 AI MCP 服务** 汇聚的示意图产品思路。
 
 ---
 

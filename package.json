@@ -1,5 +1,5 @@
 {
-  "name": "harnessui",
+  "name": "harness-design",
   "version": "0.1.0",
   "description": "AI-first component design kit — design tokens, Storybook portal, and harness CLI for building token-driven UI component libraries",
   "private": false,

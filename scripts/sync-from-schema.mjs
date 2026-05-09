@@ -98,7 +98,7 @@ function writeAgentsMd() {
 
 1. **UI / 组件 / token 真源** → \`src/components/\` 与 \`src/design-tokens/\`
 2. **Portal / sync / kit 集成** → 根层 CLI、scripts、.storybook
-3. **上游 npm 包** → \`node_modules/harnessui/\` **只读**，通过 \`harness upgrade\` 同步
+3. **上游 npm 包** → \`node_modules/harness-design/\` **只读**，通过 \`harness upgrade\` 同步
 
 ## AI 编码契约
 

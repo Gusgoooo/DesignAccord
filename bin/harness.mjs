@@ -151,7 +151,7 @@ function buildManifest(target, kitVersion) {
     files[rel] = { kitHash: fileHash(local), status: "unchanged" };
   }
   return {
-    kitPackage: "harnessui",
+    kitPackage: "harness-design",
     kitVersion,
     syncedAt: new Date().toISOString(),
     referencePolicy: REFERENCE_POLICY,
@@ -525,7 +525,7 @@ function generateAgentsMd(projectRoot, libTarget) {
    - 仅用于 Storybook 配置、schema 同步、Portal 适配。
    - 非组件实现代码。
 
-3. **上游 npm 包** → \`node_modules/harnessui/\` **只读**
+3. **上游 npm 包** → \`node_modules/harness-design/\` **只读**
    - 通过 \`harness upgrade\` 同步变更到 \`${relLib}/\`。
    - 禁止直接修改 \`node_modules\` 内文件。
 
@@ -667,7 +667,7 @@ function doUpgrade(targetArg) {
   }
 
   const manifest = {
-    kitPackage: "harnessui",
+    kitPackage: "harness-design",
     kitVersion,
     syncedAt: new Date().toISOString(),
     referencePolicy: REFERENCE_POLICY,
