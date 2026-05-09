@@ -47,10 +47,12 @@ export function DropdownMenuContent({
   className,
   align = "start",
   children,
+  style,
 }: {
   className?: string;
   align?: "start" | "end";
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   const { open, setOpen } = useMenuContext("DropdownMenuContent");
   const contentRef = React.useRef<HTMLDivElement>(null);
@@ -75,8 +77,9 @@ export function DropdownMenuContent({
     <div
       ref={contentRef}
       role="menu"
+      style={style}
       className={cn(
-        "absolute z-50 mt-[var(--padding-xxs)] min-w-[10rem] rounded-md border border-border bg-popover p-[var(--padding-xxs)] text-popover-foreground shadow-md",
+        "absolute z-50 mt-xxs min-w-[var(--layout-min-w-2xs)] rounded-md border border-border bg-popover p-xxs text-popover-foreground shadow-md",
         align === "end" ? "right-0" : "left-0",
         className,
       )}
@@ -98,9 +101,9 @@ export function DropdownMenuItem({
       type="button"
       role="menuitem"
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-[var(--padding-xs)] py-[var(--padding-xxs)] text-sm outline-none transition-colors",
+        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-xs py-xxs text-sm outline-none transition-colors",
         "focus:bg-accent focus:text-accent-foreground",
-        inset && "pl-8",
+        inset && "pl-xl",
         className,
       )}
       onClick={(e) => {
@@ -113,5 +116,5 @@ export function DropdownMenuItem({
 }
 
 export function DropdownMenuSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />;
+  return <div className={cn("-mx-xxs my-xxs h-px bg-border", className)} {...props} />;
 }

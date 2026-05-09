@@ -1,11 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AlertCircle } from "lucide-react";
-import {
-  pickPreviewShellArgs,
-  previewShellDefaults,
-  PreviewShell,
-  storyHarnessCompliance,
-} from "@/design-tokens/story-preview-shell";
+import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
 import { Alert, AlertDescription, AlertTitle } from "./alert";
 
 const meta = {
@@ -17,28 +12,15 @@ const meta = {
       ignoreArgNames: ["variant"],
     }),
   },
-  decorators: [
-    (Story, ctx) => (
-      <PreviewShell args={pickPreviewShellArgs(ctx.args as Record<string, unknown>)}>
-        <Story />
-      </PreviewShell>
-    ),
-  ],
-  args: {
-    ...previewShellDefaults,
-    variant: "default",
-  },
+  args: { variant: "default" },
   argTypes: {
-    shellPadding: { table: { disable: true } },
-    shellMaxWidth: { table: { disable: true } },
-    shellGap: { table: { disable: true } },
-    shellRadius: { table: { disable: true } },
     variant: { control: "select", options: ["default", "destructive"] },
+    className: { table: { disable: true } },
   },
 } satisfies Meta;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => (

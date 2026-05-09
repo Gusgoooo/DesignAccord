@@ -32,6 +32,12 @@ export function renderCursorrules(specs) {
     "# AI Component Harness — 自动生成，请勿手改（修改请编辑 schema 后运行 npm run sync:harness 或 npm run generate:rules）",
   );
   lines.push("");
+  lines.push("## 核心契约（AI 必须遵守）");
+  lines.push("");
+  lines.push("1. **只用 Design Token**：颜色、间距、圆角等必须通过 token 语义类引用（如 `bg-primary`、`text-muted-foreground`），禁止硬编码色值或任意值 Tailwind。");
+  lines.push("2. **组件优先**：页面开发必须使用 schema 声明的业务组件，禁止原生 HTML 标签替代。");
+  lines.push("3. **唯一数据源**：组件行为以 `src/harness/schema/components/*.spec.json` 为准，不凭记忆推断 API。");
+  lines.push("");
   lines.push("## 引用优先");
   lines.push("- **主路径**：每个组件只以该组件 `referencePriority[0]` 为默认 import；禁止在多条路径间随意切换。");
   lines.push("- 下列为全部已注册组件中出现过的路径（首条对每个 spec 为主路径，其余为备选）：");

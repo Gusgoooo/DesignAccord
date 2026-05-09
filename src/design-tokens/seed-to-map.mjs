@@ -747,6 +747,9 @@ export function deriveSeedToMap(seed, { dark = false, customSeeds = {}, fixedAli
   if (fixedAliases.fontWeightSemibold != null) vars["font-weight-semibold"] = fixedAliases.fontWeightSemibold;
   if (fixedAliases.ringWidth != null) vars["ring-width"] = fixedAliases.ringWidth;
   if (fixedAliases.ringOffset != null) vars["ring-offset"] = fixedAliases.ringOffset;
+  if (fixedAliases.paddingXXXS != null) vars["padding-xxxs"] = fixedAliases.paddingXXXS;
+  if (fixedAliases.textareaMinHeight != null) vars["textarea-min-height"] = fixedAliases.textareaMinHeight;
+  if (fixedAliases.motionDuration150 != null) vars["motion-duration-150"] = fixedAliases.motionDuration150;
 
   // Border width (kept for compatibility)
   vars["border-width-hairline"] = `${seed.lineWidth}px`;
@@ -775,6 +778,8 @@ export function deriveSeedToMap(seed, { dark = false, customSeeds = {}, fixedAli
 
   const layoutMinW = {
     "layout-min-w-0": "0",
+    "layout-min-w-2xs": "10rem",
+    "layout-min-w-xs": "12rem",
     "layout-min-w-sm": "24rem",
     "layout-min-w-md": "28rem",
     "layout-min-w-lg": "32rem",

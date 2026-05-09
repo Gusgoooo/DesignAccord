@@ -1,11 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { cssVar, layoutMaxWidthTokenIds } from "@/design-tokens/story-controls";
-import {
-  pickPreviewShellArgs,
-  previewShellDefaults,
-  PreviewShell,
-  storyHarnessCompliance,
-} from "@/design-tokens/story-preview-shell";
+import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
 import { Label } from "./label";
 import { Select } from "./select";
 
@@ -15,48 +9,20 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({
-      extraTokenIds: ["selectMaxW"],
       ignoreArgNames: ["id", "defaultValue", "children"],
     }),
   },
-  decorators: [
-    (Story, ctx) => (
-      <PreviewShell args={pickPreviewShellArgs(ctx.args as Record<string, unknown>)}>
-        <Story />
-      </PreviewShell>
-    ),
-  ],
-  args: {
-    ...previewShellDefaults,
-    selectMaxW: "layout-max-w-sm",
-  },
   argTypes: {
-    shellPadding: { table: { disable: true } },
-    shellMaxWidth: { table: { disable: true } },
-    shellGap: { table: { disable: true } },
-    shellRadius: { table: { disable: true } },
-    selectMaxW: {
-      control: "select",
-      options: layoutMaxWidthTokenIds(),
-      description: "演示区选择器最大宽度（layout token）",
-      table: { category: "演示" },
-    },
+    className: { table: { disable: true } },
   },
 } satisfies Meta;
 
 export default meta;
-type Story = StoryObj<Record<string, any>>;
+type Story = StoryObj<typeof meta>;
 
 export const Native: Story = {
-  render: (args: any) => (
-    <div
-      style={{
-        display: "grid",
-        width: "100%",
-        maxWidth: cssVar(args.selectMaxW as string),
-        gap: cssVar(args.shellGap as string),
-      }}
-    >
+  render: () => (
+    <div className="grid w-full max-w-sm gap-sm">
       <Label htmlFor="sel">选项</Label>
       <Select id="sel" defaultValue="b">
         <option value="a">选项 A</option>

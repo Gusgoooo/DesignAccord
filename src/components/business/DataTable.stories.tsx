@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { cn } from "@/lib/utils";
 import {
   cssVar,
+  cssVarOrTransparent,
   layoutMaxWidthTokenIds,
   layoutMinWidthTokenIds,
+  storyColorControlOptionsWithTransparent,
   tokenIdsByCategory,
 } from "@/design-tokens/story-controls";
 import { DataTable, type ColumnDef, type DataTableProps } from "./DataTable";
@@ -44,6 +45,8 @@ interface PreviewFrameProps {
   minWidth: string;
   shadow: string;
   showBorder: boolean;
+  cardBackgroundToken: string;
+  cardBorderToken: string;
   children: React.ReactNode;
 }
 
@@ -55,15 +58,18 @@ function PreviewFrame({
   minWidth,
   shadow,
   showBorder,
+  cardBackgroundToken,
+  cardBorderToken,
   children,
 }: PreviewFrameProps) {
+  const borderColor = cssVarOrTransparent(cardBorderToken);
   return (
     <div
       className="flex w-full items-start justify-center bg-transparent"
       style={{ padding: cssVar(outerPadding) }}
     >
       <div
-        className={cn("box-border w-full bg-background", showBorder ? "border border-border" : "border-0")}
+        className="box-border w-full border-0"
         style={{
           padding: cssVar(cardPadding),
           borderRadius: cssVar(borderRadius),
@@ -72,6 +78,10 @@ function PreviewFrame({
           marginLeft: "auto",
           marginRight: "auto",
           overflow: "hidden",
+          backgroundColor: cssVarOrTransparent(cardBackgroundToken),
+          ...(showBorder && borderColor !== "transparent"
+            ? { borderWidth: 1, borderStyle: "solid" as const, borderColor }
+            : {}),
         }}
       >
         <div style={{ minWidth: cssVar(minWidth) }} className="w-full overflow-x-auto">
@@ -124,6 +134,18 @@ const layoutArgTypes = {
     description: "显示卡片描边",
     table: { category: "布局" },
   },
+  cardBackgroundToken: {
+    control: "select",
+    options: storyColorControlOptionsWithTransparent(),
+    description: "表格外层卡片背景色（token）",
+    table: { category: "颜色" },
+  },
+  cardBorderToken: {
+    control: "select",
+    options: storyColorControlOptionsWithTransparent(),
+    description: "表格外层卡片边框色（token；透明=无边框）",
+    table: { category: "颜色" },
+  },
 } as const;
 
 const layoutDefaults = {
@@ -134,6 +156,8 @@ const layoutDefaults = {
   minWidth: "layout-min-w-lg",
   shadow: "elevation-sm",
   showBorder: true,
+  cardBackgroundToken: "background",
+  cardBorderToken: "border",
 };
 
 /* ─── 基础 DataTable（与复合表格共用 PreviewFrame + 布局 token）─── */
@@ -147,7 +171,16 @@ const meta = {
   parameters: {
     harnessTokenCompliance: {
       sidebarStatus: "full",
-      tokenIdArgs: ["outerPadding", "cardPadding", "borderRadius", "maxWidth", "minWidth", "shadow"],
+      tokenIdArgs: [
+        "outerPadding",
+        "cardPadding",
+        "borderRadius",
+        "maxWidth",
+        "minWidth",
+        "shadow",
+        "cardBackgroundToken",
+        "cardBorderToken",
+      ],
     },
   },
   args: {
@@ -189,6 +222,8 @@ const meta = {
       minWidth={args.minWidth}
       shadow={args.shadow}
       showBorder={args.showBorder}
+      cardBackgroundToken={args.cardBackgroundToken}
+      cardBorderToken={args.cardBorderToken}
     >
       <DataTable<Row>
         columns={args.columns}
@@ -206,17 +241,35 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
-  name: "交互画布",
+  args: {
+    outerPadding: "space-0",
+    cardPadding: "space-0",
+    cardBackgroundToken: "color-bg-container"
+  },
+
+  name: "交互画布"
 };
 
 export const CompactStriped: Story = {
   name: "紧凑 + 斑马纹",
-  args: { density: "compact", variant: "striped" },
+  args: {
+    density: "compact",
+    variant: "striped",
+    outerPadding: "space-0",
+    cardPadding: "space-0",
+    minWidth: "layout-min-w-xs",
+    shadow: "elevation-none"
+  },
 };
 
 export const Comfortable: Story = {
   name: "宽松",
-  args: { density: "comfortable", variant: "plain" },
+  args: {
+    density: "comfortable",
+    variant: "plain",
+    outerPadding: "space-0",
+    cardPadding: "space-0"
+  },
 };
 
 /* ─── 复合表格（KitchenSink + 画布装饰）─── */
@@ -232,8 +285,8 @@ export const SuperComposite: StoryObj<SinkArgs> = {
     columnBandIndex: 1,
     ...layoutDefaults,
     outerPadding: "space-0",
-    cardPadding: "space-1",
-    shadow: "elevation-md"
+    cardPadding: "space-2",
+    shadow: "elevation-none"
   },
   argTypes: {
     density: {
@@ -264,6 +317,8 @@ export const SuperComposite: StoryObj<SinkArgs> = {
       minWidth={args.minWidth}
       shadow={args.shadow}
       showBorder={args.showBorder}
+      cardBackgroundToken={args.cardBackgroundToken}
+      cardBorderToken={args.cardBorderToken}
     >
       <KitchenSinkDataTable
         data={sinkData}

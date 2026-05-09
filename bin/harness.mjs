@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { resolve, join, relative, sep } from "node:path";
-import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createConnection } from "node:net";
+import { createHash } from "node:crypto";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const PKG_ROOT = resolve(__dirname, "..");
@@ -16,6 +17,36 @@ const DEFAULT_HARNESS_DIR = ".harness";
 const PORTAL_PATH = "/?path=/docs/designtoken--docs";
 const DEFAULT_PORT = 6006;
 
+const MANIFEST_FILE = ".design-kit-manifest.json";
+const KIT_STATUS_FILE = ".storybook/kit-status.json";
+
+/**
+ * Reference Policy — 决定「被引用」的含义与侧栏圆点语义。
+ *
+ * 引用扫描范围：
+ *   scan:    **\/*.{ts,tsx,js,jsx}
+ *   exclude: **\/*.stories.*, node_modules/**
+ *   即：仅生产/业务代码的 import 算「被引用」；stories 内的引用不算。
+ *
+ * 圆点语义（侧栏组件行右侧）：
+ *   蓝色 #3b82f6  = NEW     该组件由本次 kit sync/upgrade 新增
+ *   琥珀 #f59e0b  = MODIFIED 用户已在本地修改过（hash 与 kit 基准不同）
+ *   无圆点        = UNCHANGED 与 kit 基准一致，或非 kit 管理文件
+ *
+ * 升级策略（harness upgrade）：
+ *   1. 新增路径（kit 有、本地无） → 直接拷贝
+ *   2. 未修改路径（本地 hash = kitHash）→ 覆盖为新版
+ *   3. 已修改路径（本地 hash ≠ kitHash）→ 跳过，打印日志
+ */
+const REFERENCE_POLICY = {
+  scanGlobs: ["**/*.{ts,tsx,js,jsx}"],
+  excludeGlobs: ["**/*.stories.*", "node_modules/**"],
+  dotColors: {
+    new: "#3b82f6",
+    modified: "#f59e0b",
+  },
+};
+
 const HELP = `
 harness — 组件库管理工具
 
@@ -27,6 +58,7 @@ harness — 组件库管理工具
 用法:
   harness start [目标目录]    一键启动（init + install + 打开 Portal）— 设计师推荐
   harness init  [目标目录]    初始化组件库（默认 ./${DEFAULT_HARNESS_DIR}）
+  harness upgrade [目标目录]  升级 kit：新增组件直接加入、未修改覆盖、已修改跳过
   harness dev   [目标目录]    启动 Storybook 并自动打开 Portal 页面
   harness mcp   [目标目录]    启动 MCP Server（供 Cursor Agent 使用）
   harness sync  [目标目录]    同步 schema → Tailwind + .cursorrules + 规则镜像
@@ -40,6 +72,9 @@ switch (cmd) {
     break;
   case "init":
     doInit(rest[0]);
+    break;
+  case "upgrade":
+    doUpgrade(rest[0]);
     break;
   case "dev":
     doDev(rest[0]);
@@ -63,6 +98,101 @@ switch (cmd) {
     console.error(`未知命令: ${cmd}\n`);
     console.log(HELP);
     process.exit(1);
+}
+
+/* ─── manifest helpers ─── */
+
+function fileHash(absPath) {
+  return createHash("sha256").update(readFileSync(absPath)).digest("hex").slice(0, 16);
+}
+
+/** Files the kit manages (non-stories source under toCopy dirs). */
+function collectKitFiles(kitRoot) {
+  const entries = [];
+  const dirs = ["src/components", "src/design-tokens", "src/styles", "src/lib", ".storybook"];
+  for (const dir of dirs) {
+    const abs = join(kitRoot, dir);
+    if (!existsSync(abs)) continue;
+    walkDir(abs, (filePath) => {
+      const rel = relative(kitRoot, filePath).split(sep).join("/");
+      entries.push(rel);
+    });
+  }
+  return entries;
+}
+
+function walkDir(dir, cb) {
+  for (const ent of readdirSyncSafe(dir)) {
+    const p = join(dir, ent);
+    try {
+      const st = statSync(p);
+      if (st.isDirectory()) walkDir(p, cb);
+      else cb(p);
+    } catch { /* skip unreadable */ }
+  }
+}
+
+function readManifest(target) {
+  const p = join(target, MANIFEST_FILE);
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; }
+}
+
+function writeManifest(target, manifest) {
+  writeFileSync(join(target, MANIFEST_FILE), JSON.stringify(manifest, null, 2) + "\n");
+}
+
+function buildManifest(target, kitVersion) {
+  const files = {};
+  const kitFiles = collectKitFiles(PKG_ROOT);
+  for (const rel of kitFiles) {
+    const local = join(target, rel);
+    if (!existsSync(local)) continue;
+    files[rel] = { kitHash: fileHash(local), status: "unchanged" };
+  }
+  return {
+    kitPackage: "component-ai-harness",
+    kitVersion,
+    syncedAt: new Date().toISOString(),
+    referencePolicy: REFERENCE_POLICY,
+    files,
+  };
+}
+
+/**
+ * Derive component-level status from file-level manifest for Storybook sidebar.
+ * Maps component display names to { status: "new" | "modified" | "unchanged" }.
+ */
+function buildKitStatus(manifest) {
+  const components = {};
+  for (const [rel, info] of Object.entries(manifest.files ?? {})) {
+    const m = rel.match(/^src\/components\/(?:starter|business)\/([^/]+)\.tsx$/);
+    if (!m) continue;
+    const fileName = m[1];
+    if (fileName.includes(".stories")) continue;
+    const name = fileName.charAt(0).toUpperCase() + fileName.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const prev = components[name];
+    if (!prev || statusPriority(info.status) > statusPriority(prev.status)) {
+      components[name] = { status: info.status, file: rel };
+    }
+  }
+  return {
+    kitVersion: manifest.kitVersion,
+    syncedAt: manifest.syncedAt,
+    dotColors: REFERENCE_POLICY.dotColors,
+    components,
+  };
+}
+
+function statusPriority(s) {
+  return s === "new" ? 2 : s === "modified" ? 1 : 0;
+}
+
+function writeKitStatus(target, manifest) {
+  const status = buildKitStatus(manifest);
+  const dir = join(target, ".storybook");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(target, KIT_STATUS_FILE), JSON.stringify(status, null, 2) + "\n");
 }
 
 /* ─── init ─── */
@@ -145,10 +275,18 @@ function doInit(targetArg) {
   // 生成组件入口 index.ts
   generateIndex(target);
 
+  // 生成 manifest + kit status（供 upgrade 和侧栏圆点使用）
+  const kitVersion = parentPkg.version || "0.0.0";
+  const manifest = buildManifest(target, kitVersion);
+  writeManifest(target, manifest);
+  writeKitStatus(target, manifest);
+  console.log("  ✅ .design-kit-manifest.json + .storybook/kit-status.json");
+
   // 生成 Cursor 集成文件（写到用户项目根目录）
   const projectRoot = resolve(target, "..");
   generateCursorRule(projectRoot, target);
   generateCursorMcp(projectRoot, target);
+  generateAgentsMd(projectRoot, target);
   installCursorHooks(projectRoot);
   installSelfcheckRule(projectRoot);
   writeHarnessConsumerDocs(projectRoot, target);
@@ -360,10 +498,47 @@ ${specSummary || "（运行 harness sync 后自动生成）"}
 ## MCP 工具（若已配置 .cursor/mcp.json）
 
 按需使用，例如：\`list_components\`、\`read_component\`、\`create_component\`、\`list_tokens\`、\`update_token\`、\`run_audit\`、\`sync_rules\`；规范相关也可用 \`read_schema\` / \`update_schema\`（与手写 JSON 等价）。
+
+## AI 核心契约
+
+详见项目根目录 **AGENTS.md**，三条硬规则：
+1. UI 真源在 \`${relLib}\`，禁止在业务 \`src/\` 复制组件实现
+2. 仅通过 Design Token 引用颜色/间距，禁止硬编码
+3. 组件行为以 schema JSON 为唯一数据源
 `;
 
   writeFileSync(join(rulesDir, "harness.mdc"), rule);
   console.log("  ✅ .cursor/rules/harness.mdc");
+}
+
+function generateAgentsMd(projectRoot, libTarget) {
+  const relLib = "./" + relative(projectRoot, libTarget).split(sep).join("/");
+  const content = `# AGENTS.md — AI 编码边界与契约
+
+## 目录约定（三条硬规则）
+
+1. **UI / 组件 / token 真源** → \`${relLib}/src/components/\` 与 \`${relLib}/src/design-tokens/\`
+   - 所有组件实现、变体、样式变更只在此处修改。
+   - 业务代码通过 \`@design\` 别名或相对路径引用，禁止复制组件实现到 \`src/\`。
+
+2. **Portal / sync / kit 集成** → \`${relLib}/\` 根层（CLI、scripts、.storybook）
+   - 仅用于 Storybook 配置、schema 同步、Portal 适配。
+   - 非组件实现代码。
+
+3. **上游 npm 包** → \`node_modules/component-ai-harness/\` **只读**
+   - 通过 \`harness upgrade\` 同步变更到 \`${relLib}/\`。
+   - 禁止直接修改 \`node_modules\` 内文件。
+
+## AI 编码契约
+
+- **Import 来源**：优先 \`@design\`（指向 \`${relLib}/index.ts\`）；禁止从 \`node_modules\` 深路径引用 kit 组件。
+- **颜色**：仅使用 Design Token 语义类（\`bg-primary\`、\`text-muted-foreground\`），禁止硬编码色值。
+- **间距**：禁止任意值 Tailwind（\`m-[13px]\`），使用 schema 声明的语义 props。
+- **组件规范**：以 \`${relLib}/src/harness/schema/components/*.spec.json\` 为唯一数据源。
+- **修改后**：运行 \`npm run sync:harness\` 同步 .cursorrules 与 Tailwind 扩展。
+`;
+  writeFileSync(join(projectRoot, "AGENTS.md"), content);
+  console.log("  ✅ AGENTS.md（项目根）");
 }
 
 function generateCursorMcp(projectRoot, libTarget) {
@@ -433,6 +608,82 @@ function installSelfcheckRule(projectRoot) {
   mkdirSync(dstDir, { recursive: true });
   cpSync(src, join(dstDir, "harness-selfcheck.mdc"));
   console.log("  ✅ .cursor/rules/harness-selfcheck.mdc");
+}
+
+/* ─── upgrade ─── */
+
+function doUpgrade(targetArg) {
+  const target = resolve(process.cwd(), targetArg || DEFAULT_HARNESS_DIR);
+
+  if (!existsSync(join(target, "package.json"))) {
+    console.error(`❌ 目标目录不存在，请先运行: harness init`);
+    process.exit(1);
+  }
+
+  const parentPkg = readPkgJson(PKG_ROOT);
+  const kitVersion = parentPkg.version || "0.0.0";
+  const oldManifest = readManifest(target);
+
+  console.log(`\n⬆️  升级 kit → ${target}`);
+  console.log(`   新版本: ${kitVersion}${oldManifest ? ` (旧版本: ${oldManifest.kitVersion})` : " (无旧 manifest)"}\n`);
+
+  const kitFiles = collectKitFiles(PKG_ROOT);
+  const oldFiles = oldManifest?.files ?? {};
+  const stats = { added: 0, updated: 0, skipped: 0, unchanged: 0 };
+  const newFiles = {};
+
+  for (const rel of kitFiles) {
+    const kitSrc = join(PKG_ROOT, rel);
+    const localDst = join(target, rel);
+    const kitHash = fileHash(kitSrc);
+    const oldEntry = oldFiles[rel];
+
+    if (!existsSync(localDst)) {
+      mkdirSync(join(target, rel, ".."), { recursive: true });
+      cpSync(kitSrc, localDst);
+      newFiles[rel] = { kitHash, status: "new" };
+      stats.added++;
+      console.log(`  ➕ 新增: ${rel}`);
+      continue;
+    }
+
+    const localHash = fileHash(localDst);
+
+    if (oldEntry && localHash === oldEntry.kitHash) {
+      cpSync(kitSrc, localDst);
+      newFiles[rel] = { kitHash, status: "unchanged" };
+      if (kitHash !== oldEntry.kitHash) {
+        stats.updated++;
+        console.log(`  🔄 已更新: ${rel}`);
+      } else {
+        stats.unchanged++;
+      }
+      continue;
+    }
+
+    newFiles[rel] = { kitHash: oldEntry?.kitHash ?? localHash, status: "modified" };
+    stats.skipped++;
+    console.log(`  ⏭️  跳过（已修改）: ${rel}`);
+  }
+
+  const manifest = {
+    kitPackage: "component-ai-harness",
+    kitVersion,
+    syncedAt: new Date().toISOString(),
+    referencePolicy: REFERENCE_POLICY,
+    files: newFiles,
+  };
+  writeManifest(target, manifest);
+  writeKitStatus(target, manifest);
+
+  // 重新生成 index.ts 以包含新增组件
+  generateIndex(target);
+
+  console.log(`\n✅ 升级完成`);
+  console.log(`   新增: ${stats.added}  更新: ${stats.updated}  跳过: ${stats.skipped}  不变: ${stats.unchanged}\n`);
+  if (stats.skipped > 0) {
+    console.log("   ⚠️  跳过的文件为用户已修改内容，不会被覆盖。\n      如需强制更新，请手动从 kit 拷贝或删除本地文件后重新 upgrade。\n");
+  }
 }
 
 /* ─── start（设计师一键启动） ─── */

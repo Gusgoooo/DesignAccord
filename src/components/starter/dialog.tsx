@@ -61,9 +61,11 @@ DialogTrigger.displayName = "DialogTrigger";
 export function DialogContent({
   className,
   children,
+  style,
 }: {
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   const { open, setOpen } = useDialogContext("DialogContent");
   const dlgRef = React.useRef<HTMLDialogElement>(null);
@@ -92,7 +94,7 @@ export function DialogContent({
       ref={dlgRef}
       className={cn(
         "fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none border-0 bg-transparent p-0",
-        "backdrop:bg-black/40 open:flex open:items-center open:justify-center open:p-[var(--padding)]",
+        "backdrop:bg-[var(--color-bg-mask)] open:flex open:items-center open:justify-center open:p-base",
         className,
       )}
       onClick={(e) => {
@@ -100,7 +102,8 @@ export function DialogContent({
       }}
     >
       <div
-        className="w-full max-w-lg rounded-lg border border-border bg-background p-[var(--padding-lg)] shadow-lg"
+        className="w-full max-w-[var(--layout-max-w-lg)] rounded-lg border border-border bg-background p-lg shadow-lg"
+        style={style}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -110,15 +113,15 @@ export function DialogContent({
 }
 
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col space-y-1.5 text-left", className)} {...props} />;
+  return <div className={cn("flex flex-col space-y-xxs text-left", className)} {...props} />;
 }
 
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col-reverse gap-[var(--size-xs)] pt-[var(--padding)] sm:flex-row sm:justify-end", className)} {...props} />;
+  return <div className={cn("flex flex-col-reverse gap-[var(--size-xs)] pt-base sm:flex-row sm:justify-end", className)} {...props} />;
 }
 
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-lg font-[var(--font-weight-semibold)] leading-none tracking-tight", className)} {...props} />;
+  return <h2 className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />;
 }
 
 export function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {

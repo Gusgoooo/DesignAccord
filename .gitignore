@@ -3,3 +3,5 @@ dist/
 storybook-static/
 .DS_Store
 *.log
+.cursorrules
+.design-kit-manifest.json

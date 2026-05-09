@@ -38,10 +38,12 @@ export function PopoverContent({
   className,
   children,
   align = "center",
+  style,
 }: {
   className?: string;
   children: React.ReactNode;
   align?: "start" | "center" | "end";
+  style?: React.CSSProperties;
 }) {
   const { open, setOpen } = usePopover("PopoverContent");
   const ref = React.useRef<HTMLDivElement>(null);
@@ -64,8 +66,9 @@ export function PopoverContent({
   return (
     <div
       ref={ref}
+      style={style}
       className={cn(
-        "absolute z-50 mt-2 min-w-[12rem] rounded-md border border-border bg-popover p-[var(--padding)] text-popover-foreground shadow-md outline-none",
+        "absolute z-50 mt-xs min-w-[var(--layout-min-w-xs)] rounded-md border border-border bg-popover p-base text-popover-foreground shadow-md outline-none",
         align === "start" && "left-0",
         align === "center" && "left-1/2 -translate-x-1/2",
         align === "end" && "right-0",

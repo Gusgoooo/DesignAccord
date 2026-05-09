@@ -32,6 +32,20 @@ function execSyncCaptured(cmd, opts) {
 }
 
 /**
+ * Portal API 写入白名单 — 只有这些目录下的文件允许被 API 写入。
+ * 防止 Portal 或恶意请求写到仓库任意位置。
+ */
+const WRITE_WHITELIST_PREFIXES = [
+  "src/harness/schema/",
+  "src/design-tokens/",
+];
+
+function isWriteAllowed(repoRoot, absPath) {
+  const rel = path.relative(repoRoot, absPath).split(path.sep).join("/");
+  return WRITE_WHITELIST_PREFIXES.some(prefix => rel.startsWith(prefix));
+}
+
+/**
  * 开发服务器中间件：读写 src/harness/schema/components/*.spec.json，保存后执行 sync:harness。
  * 供独立 Portal 与 Storybook 共用。
  */
@@ -46,6 +60,19 @@ export function schemaApiPlugin(repoRoot) {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url?.split("?")[0] ?? "";
+
+        if (req.method === "GET" && url === "/api/kit-status") {
+          const statusPath = path.join(repoRoot, ".storybook/kit-status.json");
+          try {
+            const body = fs.existsSync(statusPath) ? fs.readFileSync(statusPath, "utf8") : '{"components":{}}';
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.end(body);
+          } catch {
+            res.setHeader("Content-Type", "application/json");
+            res.end('{"components":{}}');
+          }
+          return;
+        }
 
         if (req.method === "GET" && url === "/api/design-tokens") {
           try {
@@ -66,6 +93,12 @@ export function schemaApiPlugin(repoRoot) {
           });
           req.on("end", () => {
             try {
+              if (!isWriteAllowed(repoRoot, tokensPath)) {
+                res.statusCode = 403;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ ok: false, error: "write path not in whitelist" }));
+                return;
+              }
               const payload = JSON.parse(raw);
               const jsonText = payload.jsonText ?? "";
               JSON.parse(jsonText);
@@ -239,7 +272,7 @@ export function schemaApiPlugin(repoRoot) {
               JSON.parse(jsonText);
               const pretty = `${JSON.stringify(JSON.parse(jsonText), null, 2)}\n`;
               const file = path.join(specDir, filename);
-              if (!file.startsWith(specDir + path.sep)) {
+              if (!file.startsWith(specDir + path.sep) || !isWriteAllowed(repoRoot, file)) {
                 res.statusCode = 403;
                 res.setHeader("Content-Type", "application/json; charset=utf-8");
                 res.end(JSON.stringify({ ok: false, fileWritten: false, error: "forbidden path" }));

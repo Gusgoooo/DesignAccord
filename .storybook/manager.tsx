@@ -122,40 +122,80 @@ function EditableLabel({ item, api }: { item: API_ComponentEntry; api: API }) {
     onDoubleClick={e => { e.preventDefault(); e.stopPropagation(); if (path) setEditing(true); }}>{item.name}</span>;
 }
 
-/** 侧栏组件行右侧：绿=全部 story 已标记 sidebarStatus full；红=否则 */
-function getComponentSidebarTokenStatus(api: API, item: API_ComponentEntry): "full" | "partial" {
-  let sawStory = false;
-  for (const cid of item.children) {
-    try {
-      const d = api.getData(cid) as { type?: string; parameters?: { harnessTokenCompliance?: { sidebarStatus?: "full" | "partial" } } } | undefined;
-      if (!d || d.type !== "story") continue;
-      sawStory = true;
-      if (d.parameters?.harnessTokenCompliance?.sidebarStatus !== "full") return "partial";
-    } catch {}
-  }
-  return sawStory ? "full" : "partial";
+/* ── Kit 版本差异圆点（manifest 驱动） ── */
+
+type KitStatusData = {
+  kitVersion?: string;
+  syncedAt?: string;
+  dotColors?: { new?: string; modified?: string };
+  components?: Record<string, { status: "new" | "modified" | "unchanged"; file?: string }>;
+};
+
+const kitStatusCache: { data: KitStatusData | null; loading: boolean } = { data: null, loading: false };
+
+function loadKitStatus(): KitStatusData | null {
+  if (kitStatusCache.data) return kitStatusCache.data;
+  if (kitStatusCache.loading) return null;
+  kitStatusCache.loading = true;
+  fetch(devApi("/api/kit-status"))
+    .then(r => r.json())
+    .then((d: KitStatusData) => { kitStatusCache.data = d; })
+    .catch(() => { kitStatusCache.data = { components: {} }; })
+    .finally(() => { kitStatusCache.loading = false; });
+  return null;
 }
 
-function SidebarTokenStatusDot({ api, item }: { api: API; item: API_ComponentEntry }) {
-  const ok = getComponentSidebarTokenStatus(api, item) === "full";
+function useKitStatus(): KitStatusData | null {
+  const [data, setData] = React.useState<KitStatusData | null>(() => loadKitStatus());
+  React.useEffect(() => {
+    if (data) return;
+    const id = setInterval(() => {
+      const d = loadKitStatus();
+      if (d) { setData(d); clearInterval(id); }
+    }, 300);
+    return () => clearInterval(id);
+  }, [data]);
+  return data;
+}
+
+function getComponentKitStatus(kitStatus: KitStatusData | null, item: API_ComponentEntry): "new" | "modified" | "unchanged" | null {
+  if (!kitStatus?.components) return null;
+  const name = item.name;
+  const entry = kitStatus.components[name];
+  if (entry) return entry.status;
+  const lower = name.toLowerCase();
+  for (const [k, v] of Object.entries(kitStatus.components)) {
+    if (k.toLowerCase() === lower) return v.status;
+  }
+  return null;
+}
+
+function SidebarKitStatusDot({ item }: { item: API_ComponentEntry }) {
+  const kitStatus = useKitStatus();
+  const status = getComponentKitStatus(kitStatus, item);
+  if (!status || status === "unchanged") return null;
+  const colors = kitStatus?.dotColors ?? {};
+  const color = status === "new" ? (colors.new ?? "#3b82f6") : (colors.modified ?? "#f59e0b");
+  const label = status === "new" ? "Kit 新增组件" : "本地已修改";
+  const title = status === "new"
+    ? "Kit 新增：该组件由最近一次 harness upgrade 引入"
+    : "本地已修改：组件内容与 kit 基准不同（upgrade 时不会被覆盖）";
   return (
     <span
-      title={ok
-        ? "Design Token：该组件下全部 Story 已标记为 token 约束完成（sidebarStatus: full）"
-        : "Design Token：存在未完成项 — 请在对应 *.stories.tsx 的 meta.parameters.harnessTokenCompliance 设置 sidebarStatus: full，并确保 Controls 已绑定 token"}
+      title={title}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onMouseDown={(e) => e.stopPropagation()}
       style={{
-        width: 4,
-        height: 4,
+        width: 6,
+        height: 6,
         borderRadius: 9999,
-        background: ok ? "#22c55e" : "#ef4444",
+        background: color,
         flexShrink: 0,
         marginLeft: "auto",
         boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
       }}
       role="img"
-      aria-label={ok ? "Token 已对齐" : "Token 待对齐"}
+      aria-label={label}
     />
   );
 }
@@ -1351,7 +1391,7 @@ addons.setConfig({
             <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
               <EditableLabel item={item} api={api} />
             </div>
-            <SidebarTokenStatusDot api={api} item={item} />
+            <SidebarKitStatusDot item={item} />
           </div>
         );
       }

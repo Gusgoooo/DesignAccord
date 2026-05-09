@@ -1,11 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { cssVar } from "@/design-tokens/story-controls";
-import {
-  pickPreviewShellArgs,
-  previewShellDefaults,
-  PreviewShell,
-  storyHarnessCompliance,
-} from "@/design-tokens/story-preview-shell";
+import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
 import { Separator } from "./separator";
 
 const meta = {
@@ -17,39 +11,19 @@ const meta = {
       ignoreArgNames: ["orientation"],
     }),
   },
-  decorators: [
-    (Story, ctx) => (
-      <PreviewShell args={pickPreviewShellArgs(ctx.args as Record<string, unknown>)}>
-        <Story />
-      </PreviewShell>
-    ),
-  ],
-  args: {
-    ...previewShellDefaults,
-    orientation: "horizontal",
-  },
+  args: { orientation: "horizontal" },
   argTypes: {
-    shellPadding: { table: { disable: true } },
-    shellMaxWidth: { table: { disable: true } },
-    shellGap: { table: { disable: true } },
-    shellRadius: { table: { disable: true } },
     orientation: { control: "select", options: ["horizontal", "vertical"] },
+    className: { table: { disable: true } },
   },
 } satisfies Meta;
 
 export default meta;
-type Story = StoryObj<Record<string, any>>;
+type Story = StoryObj<typeof meta>;
 
 export const Horizontal: Story = {
-  render: (args: any) => (
-    <div
-      style={{
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        gap: cssVar(args.shellGap as string),
-      }}
-    >
+  render: (args) => (
+    <div className="flex w-full flex-col gap-sm">
       <p className="text-sm">区块 A</p>
       <Separator orientation={args.orientation} />
       <p className="text-sm">区块 B</p>
@@ -59,15 +33,8 @@ export const Horizontal: Story = {
 
 export const Vertical: Story = {
   args: { orientation: "vertical" },
-  render: (args: any) => (
-    <div
-      style={{
-        display: "flex",
-        height: "4rem",
-        alignItems: "center",
-        gap: cssVar(args.shellGap as string),
-      }}
-    >
+  render: (args) => (
+    <div className="flex h-16 items-center gap-sm">
       <span className="text-sm">左</span>
       <Separator orientation={args.orientation} decorative />
       <span className="text-sm">右</span>

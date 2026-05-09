@@ -1,7 +1,90 @@
 /* AUTO-GENERATED (v2 Seed→Map) — 源：tokens.json seed 层；请勿手改。运行 npm run sync:tokens */
 
+@theme inline {
+  /* Semantic colors — var() refs; dark mode switches the underlying variable */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Border radius — direct values */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadows — var() refs; dark mode uses different shadow intensities */
+  --shadow-sm: var(--elevation-sm);
+  --shadow: var(--elevation);
+  --shadow-md: var(--elevation-md);
+  --shadow-lg: var(--elevation-lg);
+
+  /* Font weights — direct values */
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Spacing scale — direct values from padding tokens */
+  --spacing-xxxs: 2px;
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-base: 16px;
+  --spacing-md: 20px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Font sizes — direct values; token naming differs from Tailwind (see mapping above) */
+  --font-size-xs: 12px;
+  --font-size-xs--line-height: 1.6667;
+  --font-size-sm: 14px;
+  --font-size-sm--line-height: 1.5714;
+  --font-size-base: 16px;
+  --font-size-base--line-height: 1.5000;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+
+  /* Opacity — semantic names for disabled / muted / subtle states */
+  --opacity-disabled: 0.5;
+  --opacity-muted: 0.7;
+  --opacity-subtle: 0.4;
+
+  /* Motion duration — maps to Tailwind duration-* utilities */
+  --transition-duration-fast: 0.1s;
+  --transition-duration-150: 0.15s;
+  --transition-duration-mid: 0.2s;
+  --transition-duration-slow: 0.3s;
+}
+
 :root {
-  --color-primary: #1677ff;
   --color-primary-bg: #e6f4ff;
   --color-primary-bg-hover: #bae0ff;
   --color-primary-border: #91caff;
@@ -72,15 +155,11 @@
   --color-bg-solid-hover: rgba(0, 0, 0, 0.75);
   --color-bg-solid-active: rgba(0, 0, 0, 0.95);
   --color-bg-mask: rgba(0, 0, 0, 0.45);
-  --color-border: #d9d9d9;
   --color-border-secondary: #f0f0f0;
   --color-border-disabled: #d9d9d9;
   --color-white: #fff;
   --color-shadow: #000;
-  --font-size-sm: 12px;
   --font-size: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 20px;
   --font-size-heading-1: 38px;
   --font-size-heading-2: 30px;
   --font-size-heading-3: 24px;
@@ -189,13 +268,11 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --opacity-disabled: 0.5;
-  --opacity-muted: 0.7;
-  --opacity-subtle: 0.4;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
   --ring-width: 2px;
   --ring-offset: 2px;
+  --padding-xxxs: 2px;
+  --textarea-min-height: 80px;
+  --motion-duration-150: 0.15s;
   --border-width-hairline: 1px;
   --border-width-0: 0;
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -213,6 +290,8 @@
   --layout-max-w-full: 100%;
   --layout-max-w-none: none;
   --layout-min-w-0: 0;
+  --layout-min-w-2xs: 10rem;
+  --layout-min-w-xs: 12rem;
   --layout-min-w-sm: 24rem;
   --layout-min-w-md: 28rem;
   --layout-min-w-lg: 32rem;
@@ -222,7 +301,6 @@
 }
 
 .dark {
-  --color-primary: #1668dc;
   --color-primary-bg: #111a2c;
   --color-primary-bg-hover: #112545;
   --color-primary-border: #15325b;
@@ -293,15 +371,11 @@
   --color-bg-solid-hover: rgba(255, 255, 255, 0.75);
   --color-bg-solid-active: rgba(255, 255, 255, 0.95);
   --color-bg-mask: rgba(0, 0, 0, 0.45);
-  --color-border: #424242;
   --color-border-secondary: #303030;
   --color-border-disabled: #1a1a1a;
   --color-white: #fff;
   --color-shadow: #000;
-  --font-size-sm: 12px;
   --font-size: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 20px;
   --font-size-heading-1: 38px;
   --font-size-heading-2: 30px;
   --font-size-heading-3: 24px;
@@ -410,13 +484,11 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --opacity-disabled: 0.5;
-  --opacity-muted: 0.7;
-  --opacity-subtle: 0.4;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
   --ring-width: 2px;
   --ring-offset: 2px;
+  --padding-xxxs: 2px;
+  --textarea-min-height: 80px;
+  --motion-duration-150: 0.15s;
   --border-width-hairline: 1px;
   --border-width-0: 0;
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -434,6 +506,8 @@
   --layout-max-w-full: 100%;
   --layout-max-w-none: none;
   --layout-min-w-0: 0;
+  --layout-min-w-2xs: 10rem;
+  --layout-min-w-xs: 12rem;
   --layout-min-w-sm: 24rem;
   --layout-min-w-md: 28rem;
   --layout-min-w-lg: 32rem;

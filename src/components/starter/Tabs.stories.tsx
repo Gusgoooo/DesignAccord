@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  pickPreviewShellArgs,
-  previewShellDefaults,
-  PreviewShell,
-  storyHarnessCompliance,
-} from "@/design-tokens/story-preview-shell";
+import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 
 const meta = {
@@ -13,30 +8,17 @@ const meta = {
   parameters: {
     harnessTokenCompliance: storyHarnessCompliance({}),
   },
-  decorators: [
-    (Story, ctx) => (
-      <PreviewShell args={pickPreviewShellArgs(ctx.args as Record<string, unknown>)}>
-        <Story />
-      </PreviewShell>
-    ),
-  ],
-  args: {
-    ...previewShellDefaults,
-  },
   argTypes: {
-    shellPadding: { table: { disable: true } },
-    shellMaxWidth: { table: { disable: true } },
-    shellGap: { table: { disable: true } },
-    shellRadius: { table: { disable: true } },
+    className: { table: { disable: true } },
   },
 } satisfies Meta;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <div style={{ width: "100%" }}>
+    <div className="w-full">
       <Tabs defaultValue="a">
         <TabsList>
           <TabsTrigger value="a">概况</TabsTrigger>

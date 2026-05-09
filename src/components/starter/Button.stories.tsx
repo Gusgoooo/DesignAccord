@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  pickPreviewShellArgs,
-  previewShellDefaults,
-  PreviewShell,
-  storyHarnessCompliance,
-} from "@/design-tokens/story-preview-shell";
+import { storyHarnessCompliance } from "@/design-tokens/story-preview-shell";
 import { Button } from "./button";
 
 const meta = {
@@ -16,15 +11,7 @@ const meta = {
       ignoreArgNames: ["children", "variant", "size", "type", "disabled"],
     }),
   },
-  decorators: [
-    (Story, ctx) => (
-      <PreviewShell args={pickPreviewShellArgs(ctx.args as Record<string, unknown>)}>
-        <Story />
-      </PreviewShell>
-    ),
-  ],
   args: {
-    ...previewShellDefaults,
     children: "Button",
     variant: "default",
     size: "default",
@@ -32,23 +19,18 @@ const meta = {
     type: "button",
   },
   argTypes: {
-    shellPadding: { table: { disable: true } },
-    shellMaxWidth: { table: { disable: true } },
-    shellGap: { table: { disable: true } },
-    shellRadius: { table: { disable: true } },
     variant: {
       control: "select",
       options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+      description: "视觉变体；颜色来自全局语义 token。",
     },
     size: {
       control: "select",
       options: ["default", "sm", "lg", "icon"],
+      description: "高度与内边距由 control-height、padding 等 token 驱动。",
     },
     disabled: { control: "boolean" },
-    type: {
-      control: "select",
-      options: ["button", "submit", "reset"],
-    },
+    type: { control: "select", options: ["button", "submit", "reset"] },
     children: { control: "text" },
     asChild: { table: { disable: true } },
     className: { table: { disable: true } },
@@ -56,34 +38,13 @@ const meta = {
 } satisfies Meta;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-export const Secondary: Story = {
-  args: { variant: "secondary" },
-};
-
-export const Outline: Story = {
-  args: { variant: "outline" },
-};
-
-export const Destructive: Story = {
-  args: { variant: "destructive" },
-};
-
-export const Ghost: Story = {
-  args: { variant: "ghost" },
-};
-
-export const Link: Story = {
-  args: { variant: "link" },
-};
-
-export const Small: Story = {
-  args: { size: "sm", children: "Small" },
-};
-
-export const Large: Story = {
-  args: { size: "lg", children: "Large" },
-};
+export const Secondary: Story = { args: { variant: "secondary" } };
+export const Outline: Story = { args: { variant: "outline" } };
+export const Destructive: Story = { args: { variant: "destructive" } };
+export const Ghost: Story = { args: { variant: "ghost" } };
+export const Link: Story = { args: { variant: "link" } };
+export const Small: Story = { args: { size: "sm", children: "Small" } };
+export const Large: Story = { args: { size: "lg", children: "Large" } };

@@ -1,10 +1,32 @@
 {
   "name": "component-ai-harness",
+  "version": "0.1.0",
+  "description": "AI-first component design kit — design tokens, Storybook portal, and harness CLI for building token-driven UI component libraries",
   "private": false,
   "type": "module",
+  "license": "MIT",
+  "keywords": ["design-tokens", "storybook", "tailwindcss", "ai-coding", "component-library", "harness"],
   "bin": {
     "harness": "./bin/harness.mjs"
   },
+  "files": [
+    "bin/",
+    "scripts/",
+    "src/",
+    "docs/",
+    ".storybook/",
+    "vendor/",
+    "AGENTS.md",
+    ".cursorrules",
+    "tailwind.config.ts",
+    "tsconfig.json",
+    "postcss.config.mjs",
+    "vite.config.ts",
+    "vite-plugin-schema-api.mjs",
+    "components.json",
+    "harness-vite.d.ts",
+    "tailwind.harness.generated.ts"
+  ],
   "scripts": {
     "generate:rules": "node scripts/generate-cursorrules.mjs",
     "sync:tokens": "node scripts/emit-design-tokens-css.mjs",
@@ -16,8 +38,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ant-design/colors": "^8.0.1",
-    "@ant-design/fast-color": "^3.0.1",
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

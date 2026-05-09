@@ -5,7 +5,6 @@ import { themes } from "@storybook/theming";
 import "../src/styles/globals.css";
 
 const DARK_KEY = "harness-dark-mode";
-/** 与 `.storybook/manager.tsx` 中 `appContentBg` / `appBg` 一致，使画布与 Controls 面板同色 */
 const PREVIEW_BG_LIGHT = "#ffffff";
 const PREVIEW_BG_DARK = "#1c1c1e";
 

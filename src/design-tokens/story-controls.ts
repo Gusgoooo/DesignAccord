@@ -34,6 +34,30 @@ export function cssVar(tokenId: string): string {
   return `var(--${tokenId})`;
 }
 
+/** 透明：非 CSS 变量，供 Controls 选用 */
+export const STORY_COLOR_TRANSPARENT = "transparent";
+
+/** `transparent` 或空 → 透明；否则 `var(--tokenId)` */
+export function cssVarOrTransparent(tokenId: string | undefined): string {
+  if (tokenId == null || tokenId === "" || tokenId === STORY_COLOR_TRANSPARENT) return "transparent";
+  return cssVar(tokenId);
+}
+
+/**
+ * Story Controls 颜色类下拉：语义色 + 图表色 + 全量 antd 色板 map（与 token-registry 同步）。
+ */
+export function storyColorControlOptions(): string[] {
+  const sem = tokenIdsByCategory("semantic");
+  const chart = tokenIdsByCategory("chart");
+  const col = tokenIdsByCategory("color");
+  return [...new Set([...sem, ...chart, ...col])].sort((a, b) => a.localeCompare(b));
+}
+
+/** 颜色控件常用：首位为透明，便于「无填充 / 无边框」 */
+export function storyColorControlOptionsWithTransparent(): string[] {
+  return [STORY_COLOR_TRANSPARENT, ...storyColorControlOptions()];
+}
+
 /** 按分类列出可选 token id（供 argTypes.options） */
 export function tokenIdsByCategory(category: string): string[] {
   return DESIGN_TOKENS.filter((t) => t.category === category).map((t) => t.id);

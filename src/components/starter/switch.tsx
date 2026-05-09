@@ -18,7 +18,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(({ className, id,
         className={cn(
           "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent shadow-inner transition-colors",
           "bg-input peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
-          "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+          "peer-disabled:cursor-not-allowed peer-disabled:opacity-disabled",
           "peer-checked:bg-primary peer-checked:border-primary",
           "before:pointer-events-none before:absolute before:left-0.5 before:h-4 before:w-4 before:rounded-full before:bg-background before:shadow before:transition-transform before:content-['']",
           "peer-checked:before:translate-x-4",
