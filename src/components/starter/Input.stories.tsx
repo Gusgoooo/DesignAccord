@@ -7,7 +7,9 @@ import { Label } from "./label";
 
 const audit = autoClassControls(componentSrc);
 
-const meta = {
+type Args = { disabled: boolean; [k: string]: unknown };
+
+const meta: Meta<Args> = {
   title: "Input",
   tags: ["autodocs"],
   parameters: {
@@ -20,16 +22,26 @@ const meta = {
     children: { table: { disable: true } },
     ...audit.argTypes,
   },
-} satisfies Meta;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => (
-      <div className="grid w-[320px] gap-xs">
-        <Label htmlFor="email">邮箱</Label>
-        <Input id="email" type="email" placeholder="请输入邮箱" className={audit.buildClassName(args as unknown as Record<string, string>)} />
-      </div>
-    ),
+    <div className="grid w-[320px] gap-xs">
+      <Label htmlFor="email">邮箱</Label>
+      <Input id="email" type="email" placeholder="请输入邮箱" disabled={args.disabled} className={audit.buildClassName(args as Record<string, string>)} />
+    </div>
+  ),
+};
+
+export const Disabled: Story = {
+  args: { disabled: true },
+  render: (args) => (
+    <div className="grid w-[320px] gap-xs">
+      <Label htmlFor="email-d">邮箱</Label>
+      <Input id="email-d" type="email" placeholder="禁用状态" disabled={args.disabled} className={audit.buildClassName(args as Record<string, string>)} />
+    </div>
+  ),
 };

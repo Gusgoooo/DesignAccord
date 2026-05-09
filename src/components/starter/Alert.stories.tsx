@@ -28,9 +28,23 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => (
-    <Alert variant={args.variant as "default" | "destructive"} className={audit.buildClassName(args as Record<string, string>)}>
-      <AlertTitle>提示标题</AlertTitle>
-      <AlertDescription>这是一条默认的提示消息，用于展示组件的基本样式。</AlertDescription>
-    </Alert>
+    <div className="w-[400px]">
+      <Alert variant={args.variant as "default" | "destructive"} className={audit.buildClassName(args as Record<string, string>)}>
+        <AlertTitle>提示</AlertTitle>
+        <AlertDescription>这是一条默认提示消息。</AlertDescription>
+      </Alert>
+    </div>
+  ),
+};
+
+export const Destructive: Story = {
+  args: { variant: "destructive" },
+  render: (args) => (
+    <div className="w-[400px]">
+      <Alert variant={args.variant as "default" | "destructive"} className={audit.buildClassName(args as Record<string, string>)}>
+        <AlertTitle>错误</AlertTitle>
+        <AlertDescription>操作失败，请重试。</AlertDescription>
+      </Alert>
+    </div>
   ),
 };

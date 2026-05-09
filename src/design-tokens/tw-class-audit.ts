@@ -166,13 +166,7 @@ const SPACING_PREFIXES = /^(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|ga
 const RADIUS_RE = /^rounded(?:-(tl|tr|bl|br|t|r|b|l|s|e|ss|se|es|ee))?(?:-(.+))?$/;
 
 export function auditClass(cls: string): AuditEntry | null {
-  // Skip pseudo-prefixes, modifiers, and arbitrary
-  if (/^[a-z]+:/.test(cls) && !/^(space|gap)-/.test(cls)) {
-    const inner = cls.replace(/^[^:]+:/, "");
-    const result = auditClass(inner);
-    if (result) return { ...result, raw: cls, prefix: cls.replace(/:?[^:]+$/, ":") + result.prefix };
-    return null;
-  }
+  if (/^[\w[\]-]+:/.test(cls)) return null;
   if (cls.startsWith("-")) {
     const result = auditClass(cls.slice(1));
     if (result) return { ...result, raw: cls, prefix: "-" + result.prefix };
