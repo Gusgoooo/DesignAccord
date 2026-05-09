@@ -177,6 +177,7 @@ export function auditClass(cls: string): AuditEntry | null {
   const spM = cls.match(SPACING_PREFIXES);
   if (spM) {
     const [, prefix, val] = spM;
+    if (val === "auto" || val === "full" || val === "screen" || val === "fit" || val === "min" || val === "max") return null;
     if (val.startsWith("[")) return arb(cls, "spacing", prefix, val);
     const isToken = val in TOKEN_SPACING;
     const cssVal = isToken ? TOKEN_SPACING[val] : TW_NUM_SPACING_PX[val] ?? "?";
@@ -278,7 +279,7 @@ export function auditClass(cls: string): AuditEntry | null {
 function arb(
   raw: string, category: AuditCategory, prefix: string, val: string,
 ): AuditEntry {
-  return { raw, category, prefix, value: val, isToken: false, cssValue: val, equivalentToken: null, adjustable: true };
+  return { raw, category, prefix, value: val, isToken: false, cssValue: val, equivalentToken: null, adjustable: false };
 }
 
 /* ================================================================== */

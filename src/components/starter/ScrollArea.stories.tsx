@@ -24,6 +24,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    rounded: "md",
+    p: "xxxs"
+  },
+
   render: (args) => (
       <ScrollArea className={["h-[200px] w-[350px] rounded-md border p-base", audit.buildClassName(args as unknown as Record<string, string>)].filter(Boolean).join(" ")}>
         <div className="space-y-base">
@@ -32,5 +37,5 @@ export const Default: Story = {
           ))}
         </div>
       </ScrollArea>
-    ),
+    )
 };
