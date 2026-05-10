@@ -31,7 +31,7 @@ function ItemSeparator({
 }
 
 const itemVariants = cva(
-  "group/item [a]:hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 [a]:transition-colors flex flex-wrap items-center rounded-md border border-transparent text-sm outline-none transition-colors duration-100 focus-visible:ring-[3px]",
+  "group/item [a]:hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 [a]:transition-colors flex flex-wrap items-center rounded-md border border-transparent text-sm outline-none transition-colors duration-fast focus-visible:ring-[3px]",
   {
     variants: {
       variant: {
@@ -40,8 +40,8 @@ const itemVariants = cva(
         muted: "bg-muted/50",
       },
       size: {
-        default: "gap-4 p-4 ",
-        sm: "gap-2.5 px-4 py-3",
+        default: "gap-base p-base ",
+        sm: "gap-2.5 px-base py-sm",
       },
     },
     defaultVariants: {
@@ -72,7 +72,7 @@ function Item({
 }
 
 const itemMediaVariants = cva(
-  "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
+  "flex shrink-0 items-center justify-center gap-xs group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
   {
     variants: {
       variant: {
@@ -108,7 +108,7 @@ function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-content"
       className={cn(
-        "flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
+        "flex flex-1 flex-col gap-xxs [&+[data-slot=item-content]]:flex-none",
         className
       )}
       {...props}
@@ -121,7 +121,7 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-title"
       className={cn(
-        "flex w-fit items-center gap-2 text-sm font-medium leading-snug",
+        "flex w-fit items-center gap-xs text-sm font-medium leading-snug",
         className
       )}
       {...props}
@@ -147,7 +147,7 @@ function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="item-actions"
-      className={cn("flex items-center gap-2", className)}
+      className={cn("flex items-center gap-xs", className)}
       {...props}
     />
   )
@@ -158,7 +158,7 @@ function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-header"
       className={cn(
-        "flex basis-full items-center justify-between gap-2",
+        "flex basis-full items-center justify-between gap-xs",
         className
       )}
       {...props}
@@ -171,7 +171,7 @@ function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-footer"
       className={cn(
-        "flex basis-full items-center justify-between gap-2",
+        "flex basis-full items-center justify-between gap-xs",
         className
       )}
       {...props}

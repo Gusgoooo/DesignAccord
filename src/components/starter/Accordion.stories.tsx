@@ -22,6 +22,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    py: "base"
+  },
+
   render: (args) => {
     return (
       <Comp.Accordion type="single" collapsible className={audit.buildClassName(args)}>
@@ -39,5 +43,5 @@ export const Default: Story = {
         </Comp.AccordionItem>
       </Comp.Accordion>
     );
-  },
+  }
 };

@@ -398,7 +398,7 @@ export function autoClassControls(source: string): AutoControlsResult {
 
     const desc = entry.isToken
       ? `${catMeta.label} · ${entry.raw}`
-      : `⚠️ ${catMeta.label} · ${entry.raw} → 建议 ${entry.equivalentToken ?? "手动选择"}`;
+      : `⚠️ ${catMeta.label} · ${entry.raw}`;
 
     args[controlId] = defaultKey;
     argTypes[controlId] = {
@@ -421,7 +421,23 @@ export function autoClassControls(source: string): AutoControlsResult {
       .join(" ");
   }
 
+  function resolveArgTypes(runtimeArgs: Record<string, string>): Record<string, unknown> {
+    const resolved: Record<string, unknown> = { ...argTypes };
+    for (const { controlId, entry, catMeta } of slotMeta) {
+      if (entry.isToken) continue;
+      const selected = runtimeArgs[controlId];
+      const isNowToken = selected != null && selected in catMeta.tokens;
+      if (isNowToken) {
+        resolved[controlId] = {
+          ...(argTypes[controlId] as Record<string, unknown>),
+          description: `${catMeta.label} · ${catMeta.makeClass(entry.prefix, selected)}`,
+        };
+      }
+    }
+    return resolved;
+  }
+
   const nonTokenCount = allEntries.filter((e) => !e.isToken).length;
 
-  return { entries: allEntries, args, argTypes, buildClassName, nonTokenCount };
+  return { entries: allEntries, args, argTypes, buildClassName, resolveArgTypes, nonTokenCount };
 }
