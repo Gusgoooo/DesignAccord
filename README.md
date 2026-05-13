@@ -80,6 +80,24 @@ harness mcp       启动 MCP Server（Cursor Agent 集成）
 
 ---
 
+## Why not just design.md? | 为什么不用 design.md？
+
+| | design.md | HarnessDesign |
+|---|---|---|
+| **Nature 本质** | Natural language doc for AI 人写给 AI 看的自然语言 | Executable JSON protocol + automation pipeline 机器可执行的 JSON 协议 + 自动化管道 |
+| **Enforcement 执行力** | AI "suggests" compliance, often ignored AI "建议"遵守，经常忽略 | `harness audit` enforces and reports violations 强制检测违规 |
+| **Components 组件** | Describes "you should have a Button" 描述"应该有 Button" | Provides Button source + spec + import path 直接提供源码 + 规范 + 导入路径 |
+| **Maintenance 维护** | Manual updates, easily outdated 手动维护，容易过时 | `harness sync` auto-regenerates rules from spec.json 自动重新生成 |
+| **Scene Routing 场景路由** | "Please use our components" (AI doesn't know which) "请用组件"（AI 不知道有哪些） | Scene → Component lookup table AI 直接查表 |
+| **Validation 验证** | None 没有 | `harness audit` compliance report 出违规报告 |
+| **Tokens** | "Primary color is #1677ff" "主色是 #1677ff" | Seed → 175+ CSS vars → Tailwind mapping 改 seed 全局联动 |
+
+> **design.md tells AI "you should do this". Harness tells AI "you can only do this, and I'll check after".**
+>
+> **design.md 告诉 AI"你应该怎么做"，Harness 告诉 AI"你只能这么做，做完我还会检查"。**
+
+---
+
 ## How the Pipeline Works | 流水线原理
 
 ```

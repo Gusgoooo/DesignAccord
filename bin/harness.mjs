@@ -59,6 +59,7 @@ harness — 组件库管理工具
   harness start [目标目录]    一键启动（init + install + 打开 Portal）— 设计师推荐
   harness init  [目标目录]    初始化组件库（默认 ./${DEFAULT_HARNESS_DIR}）
   harness govern              治理模式：仅注入 AI 规则文件，不拷贝组件/CSS（适合已有项目）
+  harness theme  <文件>       从 Design Prompt 提取 Token，写入 tokens.json 并生成主题规则
   harness upgrade [目标目录]  升级 kit：新增组件直接加入、未修改覆盖、已修改跳过
   harness dev   [目标目录]    启动 Storybook 并自动打开 Portal 页面
   harness mcp   [目标目录]    启动 MCP Server（供 Cursor Agent 使用）
@@ -76,6 +77,9 @@ switch (cmd) {
     break;
   case "govern":
     doGovern();
+    break;
+  case "theme":
+    doTheme(rest[0]);
     break;
   case "upgrade":
     doUpgrade(rest[0]);
@@ -442,6 +446,75 @@ function readdirSyncSafe(dir) {
   catch { return []; }
 }
 
+/* ─── 场景路由表生成 ─── */
+
+function buildSceneRouting(specDir) {
+  if (!existsSync(specDir)) return "";
+
+  const sceneKeywords = [
+    { keywords: ["聊天", "对话", "chat", "conversation", "AI 对话"], scene: "AI 对话/聊天界面" },
+    { keywords: ["助手", "assistant", "AI 助手", "copilot"], scene: "AI 助手集成" },
+    { keywords: ["侧边栏", "sidebar", "工作台"], scene: "侧边栏/工作台布局" },
+    { keywords: ["弹窗", "modal", "浮窗", "弹出"], scene: "弹窗/浮层" },
+    { keywords: ["思考", "推理", "思维链", "reasoning", "chain of thought"], scene: "AI 思考过程展示" },
+    { keywords: ["工具调用", "tool-call", "function call"], scene: "AI 工具调用展示" },
+    { keywords: ["模型选择", "model selector", "切换模型"], scene: "AI 模型切换" },
+    { keywords: ["附件", "上传", "attachment", "upload"], scene: "文件上传/附件" },
+    { keywords: ["markdown", "富文本"], scene: "Markdown/富文本渲染" },
+    { keywords: ["主表格", "数据表格", "datatable", "data table", "分页"], scene: "数据表格展示" },
+    { keywords: ["表单字段", "文本输入", "勾选", "单选", "滑块"], scene: "表单/数据输入" },
+    { keywords: ["面包屑", "breadcrumb", "导航菜单", "navigation menu"], scene: "导航" },
+    { keywords: ["确认", "不可逆", "危险操作", "二次确认"], scene: "危险操作确认" },
+    { keywords: ["toast", "操作反馈"], scene: "操作反馈/通知" },
+    { keywords: ["骨架屏", "skeleton", "旋转指示", "spinner", "加载旋转"], scene: "加载状态" },
+    { keywords: ["空状态", "无数据", "empty"], scene: "空状态" },
+    { keywords: ["日期", "日历", "calendar"], scene: "日期选择" },
+    { keywords: ["选项卡", "tabs"], scene: "选项卡切换" },
+    { keywords: ["头像", "avatar"], scene: "用户头像" },
+    { keywords: ["进度", "progress", "百分比"], scene: "进度展示" },
+  ];
+
+  const files = readdirSync(specDir).filter(f => f.endsWith(".spec.json"));
+  const sceneMap = {};
+
+  for (const f of files) {
+    try {
+      const s = JSON.parse(readFileSync(join(specDir, f), "utf8"));
+      const intent = (s.intent || "").toLowerCase();
+      const name = s.componentName;
+
+      for (const { keywords, scene } of sceneKeywords) {
+        if (keywords.some(kw => intent.includes(kw.toLowerCase()))) {
+          if (!sceneMap[scene]) sceneMap[scene] = [];
+          if (!sceneMap[scene].includes(name)) sceneMap[scene].push(name);
+        }
+      }
+    } catch {}
+  }
+
+  if (!Object.keys(sceneMap).length) return "";
+
+  let table = "## 场景 → 组件速查（重要：先查此表再动手写）\n\n";
+  table += "遇到以下场景时，**必须使用对应组件，禁止从零手写**：\n\n";
+  table += "| 场景 | 使用组件 | 禁止 |\n";
+  table += "|------|---------|------|\n";
+
+  for (const [scene, components] of Object.entries(sceneMap)) {
+    const forbidden = scene.includes("AI") ? "从零手写聊天/AI UI" :
+                      scene.includes("表格") ? "原生 `<table>` + 手写样式" :
+                      scene.includes("表单") ? "原生 `<input>` + 手写样式" :
+                      scene.includes("导航") ? "原生 `<nav>` + 手写链接列表" :
+                      scene.includes("确认") ? "`window.confirm()` 或手写弹窗" :
+                      scene.includes("通知") ? "`alert()` 或手写 toast" :
+                      scene.includes("加载") ? "手写 CSS 动画 spinner" :
+                      "手写替代实现";
+    table += `| ${scene} | ${components.join("、")} | ${forbidden} |\n`;
+  }
+
+  table += "\n> **规则：写任何 UI 前，先在此表中查找是否已有对应组件。找到就用，找不到再造。**\n";
+  return table;
+}
+
 /* ─── Cursor 集成 ─── */
 
 function generateCursorRule(projectRoot, libTarget) {
@@ -461,6 +534,8 @@ function generateCursorRule(projectRoot, libTarget) {
     }
   }
 
+  const sceneRouting = buildSceneRouting(specDir);
+
   const rule = `---
 description: Harness 组件库规范 — AI 必须遵守的组件使用约束
 alwaysApply: true
@@ -474,6 +549,8 @@ alwaysApply: true
 
 - **应用 / 业务页面**：写在项目自有的 \`src/\`（或你项目原有的应用目录），**不要**把业务页面、路由、feature 代码写进 \`${relLib}\`。
 - **组件库与 Design Token**：仅在 \`${relLib}\` 内维护；Harness 通过 \`${relLib}\` 与 \`.cursor/\` 注入能力，不替代你项目本身的文件夹结构。
+
+${sceneRouting}
 
 ## 组件引用规则
 
@@ -649,6 +726,8 @@ function doGovern() {
   const rulesDir = join(projectRoot, ".cursor/rules");
   mkdirSync(rulesDir, { recursive: true });
 
+  const sceneRouting = buildSceneRouting(specDir);
+
   const governRule = `---
 description: Harness AI 编码治理规则 — 适用于已有项目的组件使用约束
 alwaysApply: true
@@ -657,6 +736,8 @@ alwaysApply: true
 # Harness AI 编码治理
 
 本项目使用 Harness 治理模式（\`harness govern\`），AI 编码必须遵守以下规范。
+
+${sceneRouting}
 
 ## 组件引用规则
 
@@ -788,6 +869,424 @@ You are working in a project governed by Harness design rules.
   • 仅通过规则文件约束 AI 行为
 
 重新打开 IDE 后规则生效。
+`);
+}
+
+/* ─── theme（从 Design Prompt 提取 Token） ─── */
+
+function extractTokensFromPrompt(text) {
+  const seed = {};
+  const seedDark = {};
+  const fixedAliases = {};
+  const customSeeds = {};
+  const sources = [];
+
+  const hexRe = /#[0-9a-fA-F]{6}\b/g;
+  const lines = text.split("\n");
+
+  // ── Phase 0: Detect if prompt is primarily dark mode ──
+  const darkSignals = (text.match(/\bdark\s*mode\b/gi) || []).length
+    + (text.match(/\bnear[- ]?black/gi) || []).length
+    + (text.match(/\bdark\s*theme\b/gi) || []).length
+    + (text.match(/deep\s*space/gi) || []).length;
+  const lightSignals = (text.match(/\blight\s*mode\b/gi) || []).length
+    + (text.match(/\boff[- ]?white\b/gi) || []).length
+    + (text.match(/\blight\s*theme\b/gi) || []).length;
+  const isDarkPrompt = darkSignals > lightSignals;
+
+  // ── Phase 1: Parse markdown table rows ──
+  // Matches rows like: | `token-name` | `#hex` | description |
+  // or: | `token-name` | #hex | description |
+  const tableTokens = [];
+  for (const line of lines) {
+    if (!line.includes("|") || !hexRe.test(line)) continue;
+    hexRe.lastIndex = 0;
+    const cells = line.split("|").map(c => c.trim()).filter(Boolean);
+    if (cells.length < 2) continue;
+    const tokenCell = cells[0].replace(/`/g, "").toLowerCase().trim();
+    const allHexes = [];
+    for (const cell of cells) {
+      const m = cell.match(hexRe);
+      if (m) allHexes.push(...m);
+    }
+    if (allHexes.length === 0) continue;
+    const descCell = cells.slice(2).join(" ").toLowerCase();
+    tableTokens.push({ token: tokenCell, hex: allHexes[0], desc: descCell, line: line.trim().substring(0, 80) });
+  }
+
+  // Map table tokens to seed fields
+  const tableRules = [
+    { match: (t) => /^(accent|primary|brand|cta)$/.test(t) || /primary.*(action|interactive|color|button|accent)/.test(t.toLowerCase() + " " + (tableTokens.find(x => x.token === t)?.desc || "")), field: "colorPrimary" },
+    { match: (t, d) => /success|positive/.test(t + " " + d), field: "colorSuccess" },
+    { match: (t, d) => /warning|caution/.test(t + " " + d), field: "colorWarning" },
+    { match: (t, d) => /error|danger|destructive/.test(t + " " + d), field: "colorError" },
+    { match: (t, d) => /^info$/.test(t) || /informational/.test(d), field: "colorInfo" },
+    { match: (t, d) => /^link$/.test(t), field: "colorLink" },
+    { match: (t, d) => /background|bg[- ]?base|canvas/.test(t) && !/elevated|deep|hover/.test(t), field: "colorBgBase" },
+    { match: (t, d) => /foreground(?!.*muted|.*subtle)|primary.*text|text[- ]?base|ink/.test(t) && !/muted|subtle|secondary/.test(t), field: "colorTextBase" },
+  ];
+
+  for (const row of tableTokens) {
+    for (const rule of tableRules) {
+      if (rule.match(row.token, row.desc)) {
+        const target = isDarkPrompt ? seedDark : seed;
+        const prefix = isDarkPrompt ? "seedDark" : "seed";
+        if (!target[rule.field]) {
+          target[rule.field] = row.hex;
+          sources.push({ field: `${prefix}.${rule.field}`, value: row.hex, from: row.line });
+        }
+        break;
+      }
+    }
+  }
+
+  // ── Phase 2: Contextual hex scanning for non-table text ──
+  const colorRoles = [
+    { keys: ["primary color", "primary action", "brand color", "accent color", "cta color", "signature color", "interactive color"], field: "colorPrimary" },
+    { keys: ["success", "positive"], field: "colorSuccess" },
+    { keys: ["warning", "caution"], field: "colorWarning" },
+    { keys: ["error color", "error red", "danger", "destructive"], field: "colorError" },
+    { keys: ["info blue", "info color"], field: "colorInfo" },
+    { keys: ["link color"], field: "colorLink" },
+    { keys: ["page canvas", "page background", "bg base", "background base", "canvas white"], field: "colorBgBase" },
+    { keys: ["primary text", "ink black", "text base", "body text color", "text color"], field: "colorTextBase" },
+  ];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes("|") && line.split("|").length > 3) continue; // skip table rows (already parsed)
+    const hexMatches = line.match(hexRe);
+    if (!hexMatches) continue;
+    const ctx = line.toLowerCase();
+
+    for (const hex of hexMatches) {
+      const target = isDarkPrompt ? seedDark : seed;
+      const prefix = isDarkPrompt ? "seedDark" : "seed";
+      for (const role of colorRoles) {
+        if (role.keys.some(k => ctx.includes(k))) {
+          if (!target[role.field]) {
+            target[role.field] = hex;
+            sources.push({ field: `${prefix}.${role.field}`, value: hex, from: line.trim().substring(0, 60) });
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // If dark prompt found bg/text but no primary, scan for accent-like references
+  const primaryTarget = isDarkPrompt ? seedDark : seed;
+  if (!primaryTarget.colorPrimary) {
+    for (const line of lines) {
+      const low = line.toLowerCase();
+      if (low.includes("|") && low.split("|").length > 3) continue;
+      if (/(?:accent|brand|primary|main\s+color|signature)\b/.test(low)) {
+        const m = line.match(hexRe);
+        if (m) {
+          const prefix = isDarkPrompt ? "seedDark" : "seed";
+          primaryTarget.colorPrimary = m[0];
+          sources.push({ field: `${prefix}.colorPrimary`, value: m[0], from: line.trim().substring(0, 60) });
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Phase 3: Font family (line-by-line to avoid cross-line matching) ──
+  // Allow markdown bold markers ** and whitespace between label and backtick
+  const fontLinePatterns = [
+    /font\s*stack[:\s*]*`([^`]+)`/i,
+    /(?:ui|body)\s[^`]*font[^`]*`([^`]+)`/i,
+    /font[- ]?family[:\s*]*`([^`]+)`/i,
+    /font[- ]?family[:\s]*["']([^"'\n]+(?:,\s*[^"'\n]+)*)/i,
+  ];
+  for (const line of lines) {
+    if (seed.fontFamily) break;
+    for (const pat of fontLinePatterns) {
+      const m = line.match(pat);
+      if (m) {
+        const raw = m[1].trim();
+        if (raw.length > 2 && raw.length < 200 && raw.includes(",")) {
+          seed.fontFamily = raw;
+          sources.push({ field: "seed.fontFamily", value: raw.substring(0, 50), from: line.trim().substring(0, 60) });
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Phase 4: Font size (body text only) ──
+  // Look for table rows containing "Body" + a size, or explicit "body.*Npx"
+  for (const line of lines) {
+    if (!seed.fontSize && /\bbody\b/i.test(line)) {
+      // Table row: | Body Text | `base` → `lg` | ... | Normal (400) |
+      const sizeMatch = line.match(/`?(?:text-)?base`?\s*(?:→|to|\|)/i) || line.match(/\b(1[4-8])\s*px\b/i);
+      if (sizeMatch && sizeMatch[1]) {
+        const sz = parseInt(sizeMatch[1], 10);
+        if (sz >= 13 && sz <= 20) {
+          seed.fontSize = sz;
+          sources.push({ field: "seed.fontSize", value: `${sz}px`, from: line.trim().substring(0, 60) });
+        }
+      }
+    }
+  }
+  // Fallback: explicit "body font-size: Npx" or "base font size Npx"
+  if (!seed.fontSize) {
+    const m = text.match(/(?:body|base)\s+(?:font[- ]?size|size)[:\s]*(\d{1,2})\s*px/i);
+    if (m) {
+      const sz = parseInt(m[1], 10);
+      if (sz >= 12 && sz <= 20) {
+        seed.fontSize = sz;
+        sources.push({ field: "seed.fontSize", value: `${sz}px`, from: m[0].substring(0, 60) });
+      }
+    }
+  }
+  // Fallback: "text-sm to text-base" means ~14px
+  if (!seed.fontSize) {
+    const m = text.match(/\bbody\b[^|]*\btext-(sm|base|lg)\b/i);
+    if (m) {
+      const sizeMap = { sm: 14, base: 16, lg: 18 };
+      const last = m[0].match(/text-(sm|base|lg)/gi);
+      if (last) {
+        const key = last[last.length - 1].replace("text-", "").toLowerCase();
+        seed.fontSize = sizeMap[key] || 14;
+        sources.push({ field: "seed.fontSize", value: `${seed.fontSize}px`, from: `Tailwind class: ${last[last.length - 1]}` });
+      }
+    }
+  }
+
+  // ── Phase 5: Font weights ──
+  // Only match explicitly labeled "medium" weight (not "normal" which is 400)
+  const weightMediumMatch = text.match(/\bmedium\b[^.\n]*?weight[:\s]*(\d{3})/i)
+    || text.match(/weight[:\s]*(\d{3})[^.\n]*?\bmedium\b/i)
+    || text.match(/\bMedium\s*\((\d{3})\)/);
+  if (weightMediumMatch) {
+    const w = parseInt(weightMediumMatch[1], 10);
+    if (w >= 400 && w <= 600) {
+      fixedAliases.fontWeightMedium = w;
+      sources.push({ field: "fixedAliases.fontWeightMedium", value: w, from: weightMediumMatch[0].substring(0, 60) });
+    }
+  }
+
+  const weightSemiboldMatch = text.match(/\b(?:semibold|semi-bold)\b[^.\n]*?weight[:\s]*(\d{3})/i)
+    || text.match(/weight[:\s]*(\d{3})[^.\n]*?\b(?:semibold|semi-bold)\b/i)
+    || text.match(/\bSemibold\s*\((\d{3})\)/);
+  if (weightSemiboldMatch) {
+    const w = parseInt(weightSemiboldMatch[1], 10);
+    if (w >= 500 && w <= 700) {
+      fixedAliases.fontWeightSemibold = w;
+      sources.push({ field: "fixedAliases.fontWeightSemibold", value: w, from: weightSemiboldMatch[0].substring(0, 60) });
+    }
+  }
+
+  // ── Phase 6: Border radius ──
+  // Standard: border-radius: 8px
+  const radiusMatch = text.match(/(?:border[- ]?radius|corner[- ]?radius)[:\s]*(\d{1,2})(?:\s*[-–]\s*\d{1,2})?\s*px/i);
+  if (radiusMatch) {
+    seed.borderRadius = parseInt(radiusMatch[1], 10);
+    sources.push({ field: "seed.borderRadius", value: `${seed.borderRadius}px`, from: radiusMatch[0].substring(0, 60) });
+  }
+  // Fallback: "`rounded-xl` (12px)" or "rounded-lg (8px)" in Buttons/Cards context
+  if (!seed.borderRadius) {
+    const radii = [];
+    const rPat = /rounded-(?:sm|md|lg|xl|2xl|3xl)`?\s*\((\d{1,2})\s*px\)/gi;
+    let rm;
+    while ((rm = rPat.exec(text)) !== null) {
+      radii.push(parseInt(rm[1], 10));
+    }
+    if (radii.length > 0) {
+      // Use the most common or median value
+      radii.sort((a, b) => a - b);
+      seed.borderRadius = radii[Math.floor(radii.length / 2)];
+      sources.push({ field: "seed.borderRadius", value: `${seed.borderRadius}px`, from: `median of ${radii.join(",")}px values` });
+    }
+  }
+
+  // ── Phase 7: Spacing ──
+  const spacingMatch = text.match(/(?:base\s+unit|spacing\s+unit|size\s+unit)[:\s]*(\d{1,2})\s*px/i);
+  if (spacingMatch) {
+    seed.sizeUnit = parseInt(spacingMatch[1], 10);
+    sources.push({ field: "seed.sizeUnit", value: `${seed.sizeUnit}px`, from: spacingMatch[0].substring(0, 60) });
+  }
+
+  // ── Phase 8: Custom tier/product colors (strict) ──
+  // Only match explicit named product tiers, not generic "accent" mentions
+  const tierPattern = /(?:tier|product\s*line|brand\s*tier)\b[^#\n]*?(#[0-9a-fA-F]{6})/gi;
+  let tierMatch;
+  let tierIndex = 1;
+  while ((tierMatch = tierPattern.exec(text)) !== null && tierIndex <= 5) {
+    const key = `chart${tierIndex}`;
+    if (!customSeeds[key]) {
+      customSeeds[key] = tierMatch[1];
+      sources.push({ field: `customSeeds.${key}`, value: tierMatch[1], from: tierMatch[0].substring(0, 60) });
+      tierIndex++;
+    }
+  }
+
+  return { seed, seedDark, fixedAliases, customSeeds, sources };
+}
+
+function doTheme(promptFile) {
+  if (!promptFile) {
+    console.error("❌ 请指定 Design Prompt 文件路径\n");
+    console.log("  用法: harness theme <prompt-file.md>\n");
+    console.log("  示例: harness theme airbnb-design.md");
+    process.exit(1);
+  }
+
+  const promptPath = resolve(process.cwd(), promptFile);
+  if (!existsSync(promptPath)) {
+    console.error(`❌ 文件不存在: ${promptPath}`);
+    process.exit(1);
+  }
+
+  const promptText = readFileSync(promptPath, "utf8");
+
+  console.log(`
+╔══════════════════════════════════════════╗
+║      Harness Theme — 主题提取模式        ║
+║  从 Design Prompt 提取 Token 注入流水线   ║
+╚══════════════════════════════════════════╝
+`);
+  console.log(`  📎 读取 Design Prompt: ${promptFile} (${promptText.length.toLocaleString()} 字)\n`);
+
+  // 1. 提取 token
+  const extracted = extractTokensFromPrompt(promptText);
+
+  if (!extracted.sources.length) {
+    console.log("  ⚠️  未能从 prompt 中提取到任何 token 值。");
+    console.log("  请确保 prompt 中包含带 #hex 色值的颜色描述、font-size、border-radius 等数值信息。\n");
+    process.exit(1);
+  }
+
+  console.log("  🎨 提取到的 Token：");
+  for (const s of extracted.sources) {
+    console.log(`     ${s.field.padEnd(30)} ${String(s.value).padEnd(12)} (from "${s.from}")`);
+  }
+  console.log("");
+
+  // 2. 找到 tokens.json 并合并
+  const projectRoot = process.cwd();
+  const harnessDir = join(projectRoot, DEFAULT_HARNESS_DIR);
+  const tokensPath = existsSync(join(harnessDir, "src/design-tokens/tokens.json"))
+    ? join(harnessDir, "src/design-tokens/tokens.json")
+    : existsSync(join(projectRoot, "src/design-tokens/tokens.json"))
+      ? join(projectRoot, "src/design-tokens/tokens.json")
+      : null;
+
+  if (!tokensPath) {
+    console.log("  ⚠️  未找到 tokens.json，请先运行 harness init 或 harness start\n");
+    console.log("  将提取结果输出为 JSON 供手动合并：\n");
+    console.log(JSON.stringify({ seed: extracted.seed, seedDark: extracted.seedDark, fixedAliases: extracted.fixedAliases }, null, 2));
+    process.exit(1);
+  }
+
+  const tokens = JSON.parse(readFileSync(tokensPath, "utf8"));
+  let mergeCount = 0;
+
+  for (const [k, v] of Object.entries(extracted.seed)) {
+    if (v != null) { tokens.seed[k] = v; mergeCount++; }
+  }
+  for (const [k, v] of Object.entries(extracted.seedDark)) {
+    if (v != null) {
+      if (!tokens.seedDark) tokens.seedDark = {};
+      tokens.seedDark[k] = v;
+      mergeCount++;
+    }
+  }
+  for (const [k, v] of Object.entries(extracted.fixedAliases)) {
+    if (v != null) {
+      if (!tokens.fixedAliases) tokens.fixedAliases = {};
+      tokens.fixedAliases[k] = v;
+      mergeCount++;
+    }
+  }
+  for (const [k, v] of Object.entries(extracted.customSeeds)) {
+    if (v != null) {
+      if (!tokens.customSeeds) tokens.customSeeds = {};
+      tokens.customSeeds[k] = v;
+      mergeCount++;
+    }
+  }
+
+  writeFileSync(tokensPath, JSON.stringify(tokens, null, 2) + "\n");
+  console.log(`  ✅ tokens.json 已更新（${mergeCount} 个值合并）`);
+
+  // 3. 运行 sync:tokens 重新生成 CSS
+  const tokensDir = join(tokensPath, "..", "..");
+  const emitScript = join(PKG_ROOT, "scripts/emit-design-tokens-css.mjs");
+  const localEmit = join(tokensDir, "scripts/emit-design-tokens-css.mjs");
+  const script = existsSync(localEmit) ? localEmit : emitScript;
+
+  try {
+    execSync(`node "${script}"`, { cwd: tokensDir, stdio: "pipe" });
+    console.log("  ✅ design-tokens.generated.css 已重新生成");
+  } catch {
+    console.log("  ⚠️  CSS 生成失败（可手动运行 npm run sync:tokens）");
+  }
+
+  // 4. 生成风格分工规则
+  const rulesDir = join(projectRoot, ".cursor/rules");
+  mkdirSync(rulesDir, { recursive: true });
+
+  const themeRule = `---
+description: Design Prompt 风格分工 — AI 必须遵守的风格与组件边界
+alwaysApply: true
+---
+
+# 风格 × 组件分工
+
+## 风格来源（Design Prompt）
+
+本项目的视觉风格基于用户提供的 Design Prompt（见 design-prompt.md）。
+AI 在实现页面时应参考该文件的：
+- 视觉氛围与品牌调性描述
+- 特定的阴影、渐变、动画细节
+- 布局原则与响应式断点
+- Do's and Don'ts 中的视觉规则
+
+## 组件来源（Harness）
+
+所有 UI 组件必须使用 Harness 组件库（见 harness.mdc 中的场景→组件速查表）。
+Token 值（颜色、间距、圆角、字重）已从 prompt 提取写入 tokens.json，
+通过 Tailwind 语义类（\`bg-primary\`, \`text-destructive\`, \`rounded-md\` 等）引用。
+
+## 已提取的 Token 映射
+
+${extracted.sources.map(s => `- \`${s.field}\` = \`${s.value}\``).join("\n")}
+
+## 禁止
+
+- ❌ 从 Design Prompt 中手抄 hex 色值到代码（必须用 Tailwind token 类）
+- ❌ 从 Design Prompt 中手抄 px 间距到代码（必须用 spacing scale）
+- ❌ 忽略 Harness 组件而按 prompt 描述从零构建组件
+- ❌ 在代码中写 \`style={{ color: '#ff385c' }}\` 等内联样式
+
+## 正确做法
+
+- ✅ 用 \`bg-primary\` 代替 \`bg-[#ff385c]\`
+- ✅ 用 \`text-foreground\` 代替 \`text-[#222222]\`
+- ✅ 用 \`rounded-md\` 代替 \`rounded-[14px]\`
+- ✅ 用 Harness 的 Button 组件代替按 prompt 手写按钮
+`;
+
+  writeFileSync(join(rulesDir, "harness-theme.mdc"), themeRule);
+  console.log("  ✅ .cursor/rules/harness-theme.mdc 已生成");
+
+  // 5. 保存原始 prompt
+  const promptDst = existsSync(harnessDir)
+    ? join(harnessDir, "design-prompt.md")
+    : join(projectRoot, "design-prompt.md");
+  writeFileSync(promptDst, promptText);
+  console.log(`  ✅ ${relative(projectRoot, promptDst)} 已保存`);
+
+  console.log(`
+✅ 主题提取完成！
+
+下一步：
+  • npx harness dev    — 在 Storybook 中预览新主题
+  • 打开 Cursor，AI 将使用提取后的 token + Harness 组件
+  • 视觉氛围细节参考 design-prompt.md
 `);
 }
 

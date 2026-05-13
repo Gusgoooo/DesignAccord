@@ -41,7 +41,7 @@ const meta: Meta<Args> = {
   decorators: [
     (Story) => (
       <MockRuntimeProvider>
-        <div style={{ padding: 40 }}>
+        <div style={{ padding: 40, minWidth: 320 }}>
           <Story />
         </div>
       </MockRuntimeProvider>
